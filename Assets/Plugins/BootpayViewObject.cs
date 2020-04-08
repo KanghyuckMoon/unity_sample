@@ -18,13 +18,17 @@ public class BootpayViewObject : MonoBehaviour
     Callback onCancel;
     Callback onReady;
     Callback onClose;
-     
+
+
+    Callback callbackRestToken;
+    Callback callbackEasyPayUserToken;
+
 #if UNITY_IPHONE
     IntPtr webView;
 
 
     [DllImport("__Internal")]
-    private static extern IntPtr _CBootpayWebviewPlugin_Request(string gameObject, string payload, string user, string items, string extra, Boolean isOneStore);
+    private static extern IntPtr _CBootpayWebviewPlugin_Request(string gameObject, string payload, string user, string items, string extra);
 
 
     [DllImport("__Internal")]
@@ -36,6 +40,7 @@ public class BootpayViewObject : MonoBehaviour
 
     [DllImport("__Internal")]
     private static extern void _CBootpayWebviewPlugin_Dismiss(IntPtr instance);
+
 
 #elif UNITY_ANDROID
     AndroidJavaObject webView;
@@ -63,18 +68,20 @@ public class BootpayViewObject : MonoBehaviour
         onClose = close; 
     }
 
-    public void Request(string payload, string user, string items, string extra, bool isOneStore) {
+   
+
+    public void Request(string payload, string user, string items, string extra) {
 
         //Debug.Log(string.Format("Bootpay Webview Start name {0}", name));
 
 #if UNITY_IPHONE
-        webView = _CBootpayWebviewPlugin_Request(name, payload, user, items, extra, isOneStore);
+        webView = _CBootpayWebviewPlugin_Request(name, payload, user, items, extra);
 
 #elif UNITY_ANDROID
         if (onCancel != null) onCancel("cancel test");
 
         webView = new AndroidJavaObject("kr.co.bootpay.unity.CBootpayWebviewPlugin");
-        webView.Call("Request", name, payload, user, items, extra, isOneStore);
+        webView.Call("Request", name, payload, user, items, extra);
 #endif
     }
 
@@ -139,12 +146,35 @@ public class BootpayViewObject : MonoBehaviour
         Debug.Log(string.Format("Bootpay Webview CallOnCancel{0}", data));
         if (onCancel != null) onCancel(data);
     }
+ 
 
     public void CallOnDone(string data)
     {
         Debug.Log(string.Format("Bootpay Webview CallOnDone{0}", data));
         if (onDone != null) onDone(data);
     }
+
+
+    //set callback from rest api
+    public void SetRestCallBack(Callback restToken, Callback userToken)
+    {
+        callbackRestToken = restToken;
+        callbackEasyPayUserToken = userToken;
+    }
+
+    //callback from rest api
+    public void CallRestToken(string data)
+    {
+        Debug.Log(string.Format("Bootpay callbackRestToken{0}", data));
+        if (callbackRestToken != null) callbackRestToken(data);
+    }
+
+    //callback from rest api
+    public void CallEasyPayUserToken(string data)
+    {
+        Debug.Log(string.Format("Bootpay callbackEasyPayUserToken{0}", data));
+        if (callbackEasyPayUserToken != null) callbackEasyPayUserToken(data);
+    } 
 }
 
 public class BootpayUser
@@ -188,6 +218,7 @@ public class BootpayPayload
     public bool show_agree_window;
     public string ux;
     public string paramJson;
+    public string user_token;
 
     //public string boot_key;
     //public bool sms_use;
@@ -200,11 +231,12 @@ public class BootpayPayload
 
     public string toJson()
     {
-        return "{" + string.Format("\"application_id\":\"{0}\",\"pg\":\"{1}\",\"method\":\"{2}\",\"methods\":[{3}],\"name\":\"{4}\",\"price\":{5},\"tax_free\":{6},\"order_id\":\"{7}\",\"use_order_id\":{8},\"account_expire_at\":\"{9}\",\"show_agree_window\":{10},\"ux\":\"{11}\",\"params\":\"{12}\"",
+        return "{" + string.Format("\"application_id\":\"{0}\",\"pg\":\"{1}\",\"method\":\"{2}\",\"methods\":[{3}],\"name\":\"{4}\",\"price\":{5},\"tax_free\":{6},\"order_id\":\"{7}\",\"use_order_id\":{8},\"account_expire_at\":\"{9}\",\"show_agree_window\":{10},\"ux\":\"{11}\",\"params\":\"{12}\",\"user_token\":\"{13}\"",
             application_id,
             pg,
             method,
-            string.Join(",", methods.ToArray()),
+            getMethods(),
+            //string.Join(",", methods.ToArray()),
             name,
             price,
             tax_free,
@@ -213,8 +245,21 @@ public class BootpayPayload
             account_expire_at,
             show_agree_window == true ? "true" : "false",
             ux,
-            paramJson
+            paramJson,
+            user_token
             ) + "}";
+    }
+
+    String getMethods()
+    {
+        string result = "";
+
+        foreach(string value in methods) {
+            if (result.Length > 0) result += ",";
+            result += "\"" + value + "\"";
+        }
+
+        return result;
     }
 }
 

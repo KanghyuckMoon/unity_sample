@@ -21,12 +21,11 @@ import WebKit
 
 @objc class BootpayWebView: UIView {
     var wv: WKWebView!
-
-    var isOneStore = false
+ 
     let configuration = WKWebViewConfiguration()
     
     var popupWV: WKWebView!
-    final let BASE_URL = "https://inapp.bootpay.co.kr/3.2.1/production.html"
+    final let BASE_URL = "https://inapp.bootpay.co.kr/3.2.3/production.html"
     final let bridgeName = "Bootpay_iOS"
     var firstLoad = false
     weak var sendable: BootpayRequestProtocol?
@@ -111,8 +110,7 @@ extension BootpayWebView: WKNavigationDelegate, WKUIDelegate, WKScriptMessageHan
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         if firstLoad == false {
             firstLoad = true
-            registerAppId()
-//            if isOneStore { useOneStore() }
+            registerAppId() 
             setDevice()
             setAnalytics()
             loadBootapyRequest()

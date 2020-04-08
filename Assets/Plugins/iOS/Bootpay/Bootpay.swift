@@ -92,13 +92,13 @@ class BootpayDefault {
         return true
     }
     
-    public static func request(_ viewController: UIViewController, sendable: BootpayRequestProtocol?, payload: BootpayPayload,  user: BootpayUser? = nil, items: [BootpayItem]? = nil, extra: BootpayExtra? = nil, smsPayload: SMSPayload? = nil, remoteForm: RemoteOrderForm? = nil, remotePre: RemoteOrderPre? = nil, addView: Bool? = false, _ isOneStore: Bool = false, _ gameObject: String = "") {
+    public static func request(_ viewController: UIViewController, sendable: BootpayRequestProtocol?, payload: BootpayPayload,  user: BootpayUser? = nil, items: [BootpayItem]? = nil, extra: BootpayExtra? = nil, smsPayload: SMSPayload? = nil, remoteForm: RemoteOrderForm? = nil, remotePre: RemoteOrderPre? = nil, addView: Bool? = false, _ gameObject: String = "") {
         
         if(!checkValid(payload: payload, user: user, items: items, extra: extra, smsPayload: smsPayload, remoteForm: remoteForm, remotePre: remotePre)) { return }
         
         switch payload.ux {
         case UX.PG_DIALOG:
-            request_dialog(viewController, sendable: sendable, payload: payload, user: user, items: items, extra: extra, smsPayload: smsPayload, addView: addView, isOneStore, gameObject)
+            request_dialog(viewController, sendable: sendable, payload: payload, user: user, items: items, extra: extra, smsPayload: smsPayload, addView: addView, gameObject)
         case UX.PG_SUBSCRIPT:
             request_dialog(viewController, sendable: sendable, payload: payload, user: user, items: items, extra: extra, smsPayload: smsPayload)
         case UX.BOOTPAY_REMOTE_LINK:
@@ -112,7 +112,7 @@ class BootpayDefault {
         }
     }
     
-    private static func request_dialog(_ viewController: UIViewController, sendable: BootpayRequestProtocol?, payload: BootpayPayload,  user: BootpayUser? = nil, items: [BootpayItem]? = nil, extra: BootpayExtra? = nil, smsPayload: SMSPayload? = nil, addView: Bool? = false, _ isOneStore: Bool = false, _ gameObject: String = "") {
+    private static func request_dialog(_ viewController: UIViewController, sendable: BootpayRequestProtocol?, payload: BootpayPayload,  user: BootpayUser? = nil, items: [BootpayItem]? = nil, extra: BootpayExtra? = nil, smsPayload: SMSPayload? = nil, addView: Bool? = false, _ gameObject: String = "") {
         
 //        sharedInstance.vc.request = request
 //        if let user = user { sharedInstance.vc.user = user }
@@ -128,8 +128,7 @@ class BootpayDefault {
         sharedInstance.vc?.payload = payload
         if(payload.application_id.isEmpty) { sharedInstance.vc?.payload.application_id = sharedInstance.application_id }
         
-//        sharedInstance.vc?.payload.application_id = sharedInstance.application_id
-        sharedInstance.vc?.isOneStore = isOneStore
+//        sharedInstance.vc?.payload.application_id = sharedInstance.application_id 
         sharedInstance.vc?.gameObject = gameObject
         
         if let user = user { sharedInstance.vc?.user = user }
@@ -399,22 +398,22 @@ extension Bootpay {
         request(viewController, sendable: sendable, payload: payload, user: user, items: items, extra: extra, smsPayload: smsPayload, addView: false) 
     }
     
-    @objc(request_objc_json::::::::)
-    public static func request_objc(_ viewController: UIViewController, sendable: BootpayRequestProtocol?, payload: String,  user: String, items: String, extra: String, isOneStore: Bool, gameObject: String) {
-        
+    @objc(request_objc_json:::::::)
+    public static func request_objc(_ viewController: UIViewController, sendable: BootpayRequestProtocol?, payload: String,  user: String, items: String, extra: String, gameObject: String) {
+
         guard let payload = BootpayPayload(JSONString: payload) else { return }
         guard let user = BootpayUser(JSONString: user) else { return }
-        
-        
+
+
 //        let items = BootpayUser(JSONString: user)
         guard let extra = BootpayExtra(JSONString: extra) else { return }
         do {
           let items = try JSONDecoder().decode([BootpayItem].self, from: items.data(using: .utf8)!)
-            request(viewController, sendable: sendable, payload: payload, user: user, items: items, extra: extra, smsPayload: nil, addView: false, isOneStore, gameObject)
-            
+            request(viewController, sendable: sendable, payload: payload, user: user, items: items, extra: extra, smsPayload: nil, addView: true, gameObject)
+
         } catch let error as NSError {
 //            print(error)
-            request(viewController, sendable: sendable, payload: payload, user: user, items: nil, extra: extra, smsPayload: nil, addView: false, isOneStore, gameObject)
+            request(viewController, sendable: sendable, payload: payload, user: user, items: nil, extra: extra, smsPayload: nil, addView: true, gameObject)
         }
     }
 }

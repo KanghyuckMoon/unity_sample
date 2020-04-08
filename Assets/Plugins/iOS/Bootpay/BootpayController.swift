@@ -59,7 +59,6 @@ extension URL {
     @objc public var user = BootpayUser()
     @objc public var extra = BootpayExtra()
     @objc public var items = [BootpayItem]()
-    @objc public var isOneStore = false
     @objc public var gameObject = ""
     
 //    @objc public var price = Double(0)
@@ -129,11 +128,10 @@ extension BootpayController {
         self.isPaying = true
         if wv == nil { wv = BootpayWebView() }
         wv.frame = CGRect(x: 0, y: 0, width: self.view.frame.width, height: self.view.frame.height)
-        wv.isOneStore = self.isOneStore
+     
         
         let script = payload.generateScript(wv.bridgeName, items: items, user: user, extra: extra)
-        
-//        if(self.isOneStore) { wv.useOneStoreApi() }
+         
         
         wv.bootpayRequest(script)
         wv.sendable = self.sendable

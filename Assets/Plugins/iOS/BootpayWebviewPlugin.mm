@@ -56,7 +56,7 @@
     [Bootpay dismiss];
 }
 
-- (void) Request: (char *)gameObjectName payload:(const char *)payload user:(const char *)user items:(const char *)items extra:(const char *)extra isOneStore:(BOOL)isOneStore {
+- (void) Request: (char *)gameObjectName payload:(const char *)payload user:(const char *)user items:(const char *)items extra:(const char *)extra {
     gameObject = new char[sizeof(gameObjectName)];
     strcpy (gameObject, gameObjectName);
        
@@ -70,10 +70,11 @@
                             :[NSString stringWithUTF8String: user]
                             :[NSString stringWithUTF8String: items]
                             :[NSString stringWithUTF8String: extra]
-                            :isOneStore
                             :[NSString stringWithUTF8String: gameObject]
      ];
 }
+ 
+
 
 - (const char *) getJson: (NSDictionary<NSString *,id> * _Nonnull) data {
     NSData *requestData = [NSJSONSerialization dataWithJSONObject:data options:0 error:nil];
@@ -116,13 +117,14 @@ extern "C" {
         [webViewPlugin Dismiss];
         webViewPlugin = nil;
     }
+ 
     
 //    void __IOS_Request(BPPayload payload, BPUser user, BPItem items[], BPExtra extra) {
 
 //const char * value = json string
-    void *_CBootpayWebviewPlugin_Request(char * gameObject, const char * payload, const char * user, const char * items, const char * extra, BOOL isOneStore) {
+    void *_CBootpayWebviewPlugin_Request(char * gameObject, const char * payload, const char * user, const char * items, const char * extra) {
         BootpayWebviewPlugin *webviewPlugin = [[BootpayWebviewPlugin alloc] init];
-        [webviewPlugin Request:gameObject payload:payload user:user items:items extra:extra isOneStore:isOneStore];
+        [webviewPlugin Request:gameObject payload:payload user:user items:items extra:extra];
         return (__bridge_retained void *)webviewPlugin;
     }
 }

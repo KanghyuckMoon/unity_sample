@@ -5,7 +5,9 @@
 //  Created by YoonTaesup on 2019. 4. 15..
 //
 
+
 import Foundation
+import UIKit
 //import ObjectMapper
 
 public class BootpayPayload: NSObject, BootpayParams, Mappable  {
@@ -29,7 +31,8 @@ public class BootpayPayload: NSObject, BootpayParams, Mappable  {
     
     @objc public var boot_key = ""
     @objc public var ux = "PG_DIALOG"
-    @objc public var sms_use = false    
+    @objc public var sms_use = false
+    @objc public var user_token = ""
     
     public override init() {}
     public required init?(map: Map) {
@@ -54,6 +57,7 @@ public class BootpayPayload: NSObject, BootpayParams, Mappable  {
         boot_key <- map["boot_key"]
         ux <- map["ux"]
         sms_use <- map["sms_use"]
+        user_token <- map["user_token"]
     }
     
   
@@ -120,78 +124,66 @@ public class BootpayPayload: NSObject, BootpayParams, Mappable  {
         return urlschema
     }
     
-    func generateScript(_ bridgeName: String, items: [BootpayItem]?, user: BootpayUser?, extra: BootpayExtra?) -> String {
-        //        print(name)
-        //        print(name.replace(target: "'", withString: "\'"))
-        
-        let userPhone = user?.phone ?? ""
-        let itemsString = generateItems(items: items)
-        let expire_month = extra?.expire_month ?? 0
-        let vbank_result = extra?.vbank_result ?? false
-        let quota = extra?.quotas.compactMap{String($0)}.joined(separator: ",") ?? ""
-        let locale = extra?.locale ?? "ko"
-        let disp_cash_result = extra?.disp_cash_result ?? "Y"
-        let escrow = extra?.escrow ?? 0 
-        
-        var array = ["BootPay.request({",
-                     "price: '\(price)',",
-            "application_id: '\(application_id)',",
-            "name: '\(name.replace(target: "\"", withString: "'").replace(target: "'", withString: "\\'").replace(target: "\n", withString: ""))',",
-            "pg:'\(pg)',",
-            "phone:'\(userPhone)',",
-//            "show_agree_window: \(show_agree_window),",
-            "show_agree_window: \(show_agree_window == true ? 1 : 0),",
-            "items: [\(itemsString)],",
-            "params: \(Bootpay.dicToJsonString(params).replace(target: "'", withString: "\\'").replace(target: "'\n", withString: "")),",
-            "order_id: '\(order_id)',",
-            "use_order_id: '\(use_order_id)',",
-            "account_expire_at: '\(account_expire_at)',",
-            "extra: {",
-            "app_scheme:'\(getURLSchema())',",
-            "expire_month:'\(expire_month)',",
-            "vbank_result:\(vbank_result),",
-            "quota:'\(quota)',",
-            "popup: \(getPopup(extra: extra)),",
-            "locale:'\(locale)',",
-            "disp_cash_result:'\(disp_cash_result)',",
-            "escrow:'\(escrow)'",
-            "}",
-            ]
-        
-        if !method.isEmpty {
-            array.append(",method: '\(method)'")
+        func generateScript(_ bridgeName: String, items: [BootpayItem]?, user: BootpayUser?, extra: BootpayExtra?) -> String {
+            //        print(name)
+            //        print(name.replace(target: "'", withString: "\'"))
+            
+            let userPhone = user?.phone ?? ""
+            let itemsString = generateItems(items: items)
+     
+             
+            var array = [
+                "BootPay.request({",
+                "price: '\(price)',",
+                "application_id: '\(application_id)',",
+                "name: '\(name.replace(target: "\"", withString: "'").replace(target: "'", withString: "\\'").replace(target: "\n", withString: ""))',",
+                "pg:'\(pg)',",
+                "user_token:'\(user_token)',",
+                "phone:'\(userPhone)',",
+    //            "show_agree_window: \(show_agree_window),",
+                "show_agree_window: \(show_agree_window == true ? 1 : 0),",
+                "items: [\(itemsString)],",
+                "params: \(Bootpay.dicToJsonString(params).replace(target: "'", withString: "\\'").replace(target: "'\n", withString: "")),",
+                "order_id: '\(order_id)',",
+                "use_order_id: '\(use_order_id)',",
+                "account_expire_at: '\(account_expire_at)',",
+                
+                ]
+            
+            
+            if !method.isEmpty {
+                array.append("method: '\(method)'")
+            }
+          
+            if !methods.isEmpty {
+                array.append("methods: \(listToJson(methods))")
+            }
+             
+            let userJson = user?.toString() ?? ""
+            array.append(",user_info: \(userJson)")
+            
+            if let extra = extra {
+                array.append(",extra: \(extra.getJson(pg: pg))")
+            }
+            
+            let result = array +
+                ["}).error(function (data) {",
+                 "webkit.messageHandlers.\(bridgeName).postMessage(data);",
+                    "}).confirm(function (data) {",
+                    "webkit.messageHandlers.\(bridgeName).postMessage(data);",
+                    "}).ready(function (data) {",
+                    "webkit.messageHandlers.\(bridgeName).postMessage(data);",
+                    "}).cancel(function (data) {",
+                    "webkit.messageHandlers.\(bridgeName).postMessage(data);",
+                    "}).close(function () {",
+                    "webkit.messageHandlers.\(bridgeName).postMessage('close');",
+                    "}).done(function (data) {",
+                    "webkit.messageHandlers.\(bridgeName).postMessage(data);",
+                    "});"]
+            
+    //        print(result.reduce("", +))
+            return result.reduce("", +)
         }
-        
-        if !methods.isEmpty {
-            array.append(",methods: \(listToJson(methods))")
-        }
-        
-        let userJson = user?.toString() ?? ""
-        array.append(",user_info: \(userJson)")
-        
-        
-        let result = array +
-            ["}).error(function (data) {",
-             "webkit.messageHandlers.\(bridgeName).postMessage(data);",
-                "}).confirm(function (data) {",
-                "webkit.messageHandlers.\(bridgeName).postMessage(data);",
-                "}).ready(function (data) {",
-                "webkit.messageHandlers.\(bridgeName).postMessage(data);",
-                "}).cancel(function (data) {",
-                "webkit.messageHandlers.\(bridgeName).postMessage(data);",
-                "}).close(function () {",
-                "webkit.messageHandlers.\(bridgeName).postMessage('close');",
-                "}).done(function (data) {",
-                "webkit.messageHandlers.\(bridgeName).postMessage(data);",
-                "});"]
-        
-//        print(result.reduce("", +))
-        return result.reduce("", +)
-    }
-    
-//    @objc public var expire_month = 12 // 정기결제 실행 기간
-//    @objc public var vbank_result = 1 // 가상계좌 결과창 안보이게 하기
-//    @objc public var quotas = [0,2,3,4,5,6,7,8,9,10,11,12] // 할부 개월 수
     
     
 }
